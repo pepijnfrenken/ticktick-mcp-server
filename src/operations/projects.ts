@@ -51,6 +51,7 @@ export const UpdateProjectOptionsSchema = z.object({
     .optional()
     .describe('View mode'),
   kind: z.enum(['TASK', 'NOTE']).optional().describe('Project kind'),
+  closed: z.boolean().optional().describe('Close or reopen the project'),
 });
 
 type CreateProjectParams = z.infer<typeof CreateProjectOptionsSchema>;

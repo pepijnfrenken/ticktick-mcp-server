@@ -8,7 +8,7 @@ import {
   TickTickTaskSchema,
   TickTickUserSchema,
 } from '../common/types.js';
-import { getProjectWithData } from './projects.js';
+import { getProjectWithData, getUserProjects } from './projects.js';
 
 export const GetTaskByIdsOptionsSchema = z.object({
   projectId: z.string().describe('Project identifier'),
@@ -338,4 +338,308 @@ export async function getInboxTasks(params: GetInboxTasksParams) {
   }
 
   return data;
+}
+
+// ============================================================
+// NEW HELPER FUNCTIONS (date queries, search, GTD, etc.)
+// ============================================================
+
+// --- Date helpers ---
+
+function parseTaskDate(date: string | number | undefined): Date | null {
+  if (!date) return null;
+  if (typeof date === 'number') {
+    return new Date(date > 1e12 ? date : date * 1000);
+  }
+  return new Date(date);
+}
+
+function getStartOfDayUTC(d: Date): Date {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+}
+
+function getEndOfDayUTC(d: Date): Date {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999));
+}
+
+function getStartOfWeekUTC(d: Date): Date {
+  const day = d.getUTCDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const monday = new Date(d);
+  monday.setUTCDate(d.getUTCDate() + diff);
+  return getStartOfDayUTC(monday);
+}
+
+function getEndOfWeekUTC(d: Date): Date {
+  const start = getStartOfWeekUTC(d);
+  const sunday = new Date(start);
+  sunday.setUTCDate(start.getUTCDate() + 6);
+  return getEndOfDayUTC(sunday);
+}
+
+// --- Core: fetch all tasks across all projects ---
+
+export const GetAllTasksOptionsSchema = z.object({
+  status: z
+    .enum(['all', 'uncompleted', 'completed'])
+    .optional()
+    .describe('Filter by task status (default: uncompleted)'),
+});
+
+type GetAllTasksParams = z.infer<typeof GetAllTasksOptionsSchema>;
+
+export async function getAllTasks(params: GetAllTasksParams = {}) {
+  const parsed = GetAllTasksOptionsSchema.parse(params);
+  const status = parsed.status || 'uncompleted';
+  const projects = await getUserProjects();
+  const allTasks: z.infer<typeof TickTickTaskSchema>[] = [];
+
+  for (const project of projects) {
+    try {
+      const data = await getProjectWithData(project.id);
+      allTasks.push(...data.tasks);
+    } catch {
+      // Skip projects we can't access
+    }
+  }
+
+  if (status === 'uncompleted') {
+    return allTasks.filter((t) => t.status !== 2);
+  }
+  if (status === 'completed') {
+    return allTasks.filter((t) => t.status === 2);
+  }
+  return allTasks;
+}
+
+// --- Search tasks ---
+
+export const SearchTasksOptionsSchema = z.object({
+  query: z.string().describe('Search text to match against task title and content'),
+  status: z
+    .enum(['all', 'uncompleted', 'completed'])
+    .optional()
+    .describe('Filter by task status (default: uncompleted)'),
+});
+
+type SearchTasksParams = z.infer<typeof SearchTasksOptionsSchema>;
+
+export async function searchTasks(params: SearchTasksParams) {
+  const parsed = SearchTasksOptionsSchema.parse(params);
+  const { query, status = 'uncompleted' } = parsed;
+  const tasks = await getAllTasks({ status });
+  const lowerQuery = query.toLowerCase();
+  return tasks.filter(
+    (t) =>
+      t.title?.toLowerCase().includes(lowerQuery) ||
+      t.content?.toLowerCase().includes(lowerQuery) ||
+      t.desc?.toLowerCase().includes(lowerQuery)
+  );
+}
+
+// --- Get tasks by priority ---
+
+export const GetTasksByPriorityOptionsSchema = z.object({
+  priority: z
+    .number()
+    .describe('Task priority: 0=None, 1=Low, 3=Medium, 5=High'),
+  status: z
+    .enum(['all', 'uncompleted', 'completed'])
+    .optional()
+    .describe('Filter by task status (default: uncompleted)'),
+});
+
+type GetTasksByPriorityParams = z.infer<typeof GetTasksByPriorityOptionsSchema>;
+
+export async function getTasksByPriority(params: GetTasksByPriorityParams) {
+  const parsed = GetTasksByPriorityOptionsSchema.parse(params);
+  const { priority, status = 'uncompleted' } = parsed;
+  const tasks = await getAllTasks({ status });
+  return tasks.filter((t) => t.priority === priority);
+}
+
+// --- Date-based queries ---
+
+export const GetTasksDueTodayOptionsSchema = z.object({
+  status: z
+    .enum(['all', 'uncompleted', 'completed'])
+    .optional()
+    .describe('Filter by task status (default: uncompleted)'),
+});
+
+export const GetTasksDueTomorrowOptionsSchema = z.object({
+  status: z
+    .enum(['all', 'uncompleted', 'completed'])
+    .optional()
+    .describe('Filter by task status (default: uncompleted)'),
+});
+
+export const GetTasksDueThisWeekOptionsSchema = z.object({
+  status: z
+    .enum(['all', 'uncompleted', 'completed'])
+    .optional()
+    .describe('Filter by task status (default: uncompleted)'),
+});
+
+export const GetTasksDueInDaysOptionsSchema = z.object({
+  days: z
+    .number()
+    .min(1)
+    .max(365)
+    .describe('Number of days from today (1-365)'),
+  status: z
+    .enum(['all', 'uncompleted', 'completed'])
+    .optional()
+    .describe('Filter by task status (default: uncompleted)'),
+});
+
+export const GetOverdueTasksOptionsSchema = z.object({
+  status: z
+    .enum(['all', 'uncompleted', 'completed'])
+    .optional()
+    .describe('Filter by task status (default: uncompleted)'),
+});
+
+type GetTasksDueTodayParams = z.infer<typeof GetTasksDueTodayOptionsSchema>;
+type GetTasksDueTomorrowParams = z.infer<typeof GetTasksDueTomorrowOptionsSchema>;
+type GetTasksDueThisWeekParams = z.infer<typeof GetTasksDueThisWeekOptionsSchema>;
+type GetTasksDueInDaysParams = z.infer<typeof GetTasksDueInDaysOptionsSchema>;
+type GetOverdueTasksParams = z.infer<typeof GetOverdueTasksOptionsSchema>;
+
+export async function getTasksDueToday(params: GetTasksDueTodayParams = {}) {
+  const parsed = GetTasksDueTodayOptionsSchema.parse(params);
+  const status = parsed.status || 'uncompleted';
+  const tasks = await getAllTasks({ status });
+  const now = new Date();
+  const start = getStartOfDayUTC(now);
+  const end = getEndOfDayUTC(now);
+  return tasks.filter((t) => {
+    const due = parseTaskDate(t.dueDate);
+    return due !== null && due >= start && due <= end;
+  });
+}
+
+export async function getTasksDueTomorrow(params: GetTasksDueTomorrowParams = {}) {
+  const parsed = GetTasksDueTomorrowOptionsSchema.parse(params);
+  const status = parsed.status || 'uncompleted';
+  const tasks = await getAllTasks({ status });
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setUTCDate(now.getUTCDate() + 1);
+  const start = getStartOfDayUTC(tomorrow);
+  const end = getEndOfDayUTC(tomorrow);
+  return tasks.filter((t) => {
+    const due = parseTaskDate(t.dueDate);
+    return due !== null && due >= start && due <= end;
+  });
+}
+
+export async function getTasksDueThisWeek(params: GetTasksDueThisWeekParams = {}) {
+  const parsed = GetTasksDueThisWeekOptionsSchema.parse(params);
+  const status = parsed.status || 'uncompleted';
+  const tasks = await getAllTasks({ status });
+  const now = new Date();
+  const start = getStartOfWeekUTC(now);
+  const end = getEndOfWeekUTC(now);
+  return tasks.filter((t) => {
+    const due = parseTaskDate(t.dueDate);
+    return due !== null && due >= start && due <= end;
+  });
+}
+
+export async function getTasksDueInDays(params: GetTasksDueInDaysParams) {
+  const parsed = GetTasksDueInDaysOptionsSchema.parse(params);
+  const { days, status = 'uncompleted' } = parsed;
+  const tasks = await getAllTasks({ status });
+  const now = new Date();
+  const start = getStartOfDayUTC(now);
+  const future = new Date(now);
+  future.setUTCDate(now.getUTCDate() + days);
+  const end = getEndOfDayUTC(future);
+  return tasks.filter((t) => {
+    const due = parseTaskDate(t.dueDate);
+    return due !== null && due >= start && due <= end;
+  });
+}
+
+export async function getOverdueTasks(params: GetOverdueTasksParams = {}) {
+  const parsed = GetOverdueTasksOptionsSchema.parse(params);
+  const status = parsed.status || 'uncompleted';
+  const tasks = await getAllTasks({ status });
+  const now = new Date();
+  const startOfToday = getStartOfDayUTC(now);
+  return tasks.filter((t) => {
+    const due = parseTaskDate(t.dueDate);
+    return due !== null && due < startOfToday;
+  });
+}
+
+// --- GTD helpers ---
+
+export const GetEngagedTasksOptionsSchema = z.object({
+  status: z
+    .enum(['all', 'uncompleted', 'completed'])
+    .optional()
+    .describe('Filter by task status (default: uncompleted)'),
+});
+
+export const GetNextTasksOptionsSchema = z.object({
+  status: z
+    .enum(['all', 'uncompleted', 'completed'])
+    .optional()
+    .describe('Filter by task status (default: uncompleted)'),
+});
+
+type GetEngagedTasksParams = z.infer<typeof GetEngagedTasksOptionsSchema>;
+type GetNextTasksParams = z.infer<typeof GetNextTasksOptionsSchema>;
+
+export async function getEngagedTasks(params: GetEngagedTasksParams = {}) {
+  const parsed = GetEngagedTasksOptionsSchema.parse(params);
+  const status = parsed.status || 'uncompleted';
+  const tasks = await getAllTasks({ status });
+  const now = new Date();
+  const startOfToday = getStartOfDayUTC(now);
+  return tasks.filter((t) => {
+    const isHighPriority = t.priority === 5;
+    const due = parseTaskDate(t.dueDate);
+    const isOverdue = due !== null && due < startOfToday;
+    return isHighPriority || isOverdue;
+  });
+}
+
+export async function getNextTasks(params: GetNextTasksParams = {}) {
+  const parsed = GetNextTasksOptionsSchema.parse(params);
+  const status = parsed.status || 'uncompleted';
+  const tasks = await getAllTasks({ status });
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setUTCDate(now.getUTCDate() + 1);
+  const startOfTomorrow = getStartOfDayUTC(tomorrow);
+  const endOfTomorrow = getEndOfDayUTC(tomorrow);
+  return tasks.filter((t) => {
+    const isMediumPriority = t.priority === 3;
+    const due = parseTaskDate(t.dueDate);
+    const isDueTomorrow = due !== null && due >= startOfTomorrow && due <= endOfTomorrow;
+    return isMediumPriority || isDueTomorrow;
+  });
+}
+
+// --- Batch create tasks (convenience wrapper) ---
+
+export const BatchCreateTasksOptionsSchema = z.object({
+  tasks: z
+    .array(
+      TickTickTaskSchema.partial().extend({
+        title: z.string().describe('Task title'),
+        projectId: z.string().describe('Project id'),
+      })
+    )
+    .describe('Array of task objects to create'),
+});
+
+type BatchCreateTasksParams = z.infer<typeof BatchCreateTasksOptionsSchema>;
+
+export async function batchCreateTasks(params: BatchCreateTasksParams) {
+  const { tasks: taskList } = BatchCreateTasksOptionsSchema.parse(params);
+  return batchUpdateTasks({ add: taskList });
 }

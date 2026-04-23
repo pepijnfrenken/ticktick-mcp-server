@@ -108,6 +108,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         ),
       },
       {
+        name: 'batch_create_tasks',
+        description: 'Batch create multiple tasks in a single request',
+        inputSchema: zodToJsonSchema(tasks.BatchCreateTasksOptionsSchema),
+      },
+      {
         name: 'get_subtasks',
         description:
           'Get all subtasks of a parent task by fetching project data and filtering by parentId',
@@ -123,6 +128,59 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         description:
           'Get tasks from the inbox (resolves inbox project ID automatically from user profile)',
         inputSchema: zodToJsonSchema(tasks.GetInboxTasksOptionsSchema),
+      },
+      {
+        name: 'get_all_tasks',
+        description:
+          'Get all tasks across all projects (optionally filter by status)',
+        inputSchema: zodToJsonSchema(tasks.GetAllTasksOptionsSchema),
+      },
+      {
+        name: 'search_tasks',
+        description: 'Search tasks by text in title, content, or description',
+        inputSchema: zodToJsonSchema(tasks.SearchTasksOptionsSchema),
+      },
+      {
+        name: 'get_tasks_by_priority',
+        description: 'Get tasks filtered by priority level',
+        inputSchema: zodToJsonSchema(tasks.GetTasksByPriorityOptionsSchema),
+      },
+      {
+        name: 'get_tasks_due_today',
+        description: 'Get tasks due today',
+        inputSchema: zodToJsonSchema(tasks.GetTasksDueTodayOptionsSchema),
+      },
+      {
+        name: 'get_tasks_due_tomorrow',
+        description: 'Get tasks due tomorrow',
+        inputSchema: zodToJsonSchema(tasks.GetTasksDueTomorrowOptionsSchema),
+      },
+      {
+        name: 'get_tasks_due_this_week',
+        description: 'Get tasks due this week (Monday-Sunday)',
+        inputSchema: zodToJsonSchema(tasks.GetTasksDueThisWeekOptionsSchema),
+      },
+      {
+        name: 'get_tasks_due_in_days',
+        description: 'Get tasks due within the next N days',
+        inputSchema: zodToJsonSchema(tasks.GetTasksDueInDaysOptionsSchema),
+      },
+      {
+        name: 'get_overdue_tasks',
+        description: 'Get overdue tasks (due date has passed)',
+        inputSchema: zodToJsonSchema(tasks.GetOverdueTasksOptionsSchema),
+      },
+      {
+        name: 'get_engaged_tasks',
+        description:
+          'Get "engaged" tasks: high priority OR overdue (GTD-style hot tasks)',
+        inputSchema: zodToJsonSchema(tasks.GetEngagedTasksOptionsSchema),
+      },
+      {
+        name: 'get_next_tasks',
+        description:
+          'Get "next" tasks: medium priority OR due tomorrow (GTD-style upcoming tasks)',
+        inputSchema: zodToJsonSchema(tasks.GetNextTasksOptionsSchema),
       },
     ],
   };
@@ -292,6 +350,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
 
+      case 'batch_create_tasks': {
+        const args = tasks.BatchCreateTasksOptionsSchema.parse(
+          request.params.arguments
+        );
+
+        const result = await tasks.batchCreateTasks(args);
+
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      }
+
       case 'get_subtasks': {
         const args = tasks.GetSubtasksOptionsSchema.parse(
           request.params.arguments
@@ -318,6 +388,126 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         );
 
         const result = await tasks.getInboxTasks(args);
+
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      }
+
+      case 'get_all_tasks': {
+        const args = tasks.GetAllTasksOptionsSchema.parse(
+          request.params.arguments ?? {}
+        );
+
+        const result = await tasks.getAllTasks(args);
+
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      }
+
+      case 'search_tasks': {
+        const args = tasks.SearchTasksOptionsSchema.parse(
+          request.params.arguments
+        );
+
+        const result = await tasks.searchTasks(args);
+
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      }
+
+      case 'get_tasks_by_priority': {
+        const args = tasks.GetTasksByPriorityOptionsSchema.parse(
+          request.params.arguments
+        );
+
+        const result = await tasks.getTasksByPriority(args);
+
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      }
+
+      case 'get_tasks_due_today': {
+        const args = tasks.GetTasksDueTodayOptionsSchema.parse(
+          request.params.arguments ?? {}
+        );
+
+        const result = await tasks.getTasksDueToday(args);
+
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      }
+
+      case 'get_tasks_due_tomorrow': {
+        const args = tasks.GetTasksDueTomorrowOptionsSchema.parse(
+          request.params.arguments ?? {}
+        );
+
+        const result = await tasks.getTasksDueTomorrow(args);
+
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      }
+
+      case 'get_tasks_due_this_week': {
+        const args = tasks.GetTasksDueThisWeekOptionsSchema.parse(
+          request.params.arguments ?? {}
+        );
+
+        const result = await tasks.getTasksDueThisWeek(args);
+
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      }
+
+      case 'get_tasks_due_in_days': {
+        const args = tasks.GetTasksDueInDaysOptionsSchema.parse(
+          request.params.arguments
+        );
+
+        const result = await tasks.getTasksDueInDays(args);
+
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      }
+
+      case 'get_overdue_tasks': {
+        const args = tasks.GetOverdueTasksOptionsSchema.parse(
+          request.params.arguments ?? {}
+        );
+
+        const result = await tasks.getOverdueTasks(args);
+
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      }
+
+      case 'get_engaged_tasks': {
+        const args = tasks.GetEngagedTasksOptionsSchema.parse(
+          request.params.arguments ?? {}
+        );
+
+        const result = await tasks.getEngagedTasks(args);
+
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        };
+      }
+
+      case 'get_next_tasks': {
+        const args = tasks.GetNextTasksOptionsSchema.parse(
+          request.params.arguments ?? {}
+        );
+
+        const result = await tasks.getNextTasks(args);
 
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
