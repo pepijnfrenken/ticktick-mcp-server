@@ -12,6 +12,10 @@ MCP Server for the TickTick API, enabling task management, project organization,
 - 🔄 **Complete Task Control**: Set priorities, due dates, reminders, and recurring rules
 - 🔐 **OAuth Authentication**: Full OAuth2 implementation for secure API access
 - ⚠️ **Comprehensive Error Handling**: Clear error messages for common issues
+- 🔍 **Search & Filter**: Search tasks by text, filter by priority and due dates
+- 📅 **Date Queries**: Get tasks due today, tomorrow, this week, or within N days
+- 🎯 **GTD Helpers**: "Engaged" (high priority / overdue) and "Next" (medium / due tomorrow) task views
+- 📦 **Batch Operations**: Create or update multiple tasks in a single request
 
 ## Tools
 
@@ -122,6 +126,7 @@ MCP Server for the TickTick API, enabling task management, project organization,
       - `sortOrder` (optional number): Project sort order
       - `viewMode` (optional string): View mode ('list', 'kanban', 'timeline')
       - `kind` (optional string): Project kind ('TASK', 'NOTE')
+      - `closed` (optional boolean): Close or reopen the project
     - Returns: Updated project object matching `TickTickProjectSchema`
 
 11. `delete_project`
@@ -129,6 +134,109 @@ MCP Server for the TickTick API, enabling task management, project organization,
     - Inputs:
       - `projectId` (string): Project identifier
     - Returns: void
+
+12. `get_completed_tasks`
+    - Get completed tasks across all projects within a date range
+    - Inputs:
+      - `from` (string): Start datetime
+      - `to` (optional string): End datetime (defaults to now)
+      - `limit` (optional number): Max results (default 100)
+    - Returns: Array of completed task objects
+
+13. `batch_update_tasks`
+    - Batch create, update, and/or delete multiple tasks in a single request
+    - Inputs:
+      - `add` (optional array): Tasks to create
+      - `update` (optional array): Tasks to update
+      - `delete` (optional array): Tasks to delete
+    - Returns: Batch operation result
+
+14. `batch_create_tasks`
+    - Convenience wrapper to batch create multiple tasks
+    - Inputs:
+      - `tasks` (array): Array of task objects to create (requires `title` and `projectId`)
+    - Returns: Batch operation result
+
+15. `get_subtasks`
+    - Get all subtasks of a parent task
+    - Inputs:
+      - `parentId` (string): Parent task ID
+      - `projectId` (string): Project ID containing the parent task
+    - Returns: Array of subtask objects
+
+16. `get_current_user`
+    - Get the current authenticated user profile
+    - Inputs: None
+    - Returns: User object with `id` and `username`
+
+17. `get_inbox_tasks`
+    - Get tasks from the inbox (auto-resolves inbox project ID)
+    - Inputs:
+      - `includeCompleted` (optional boolean): Include completed tasks
+    - Returns: Project data object with inbox tasks
+
+18. `get_all_tasks`
+    - Get all tasks across all projects
+    - Inputs:
+      - `status` (optional enum): `all`, `uncompleted`, or `completed` (default: `uncompleted`)
+    - Returns: Array of task objects
+
+19. `search_tasks`
+    - Search tasks by text in title, content, or description
+    - Inputs:
+      - `query` (string): Search text
+      - `status` (optional enum): `all`, `uncompleted`, or `completed` (default: `uncompleted`)
+    - Returns: Array of matching task objects
+
+20. `get_tasks_by_priority`
+    - Get tasks filtered by priority level
+    - Inputs:
+      - `priority` (number): 0=None, 1=Low, 3=Medium, 5=High
+      - `status` (optional enum): `all`, `uncompleted`, or `completed` (default: `uncompleted`)
+    - Returns: Array of task objects with matching priority
+
+21. `get_tasks_due_today`
+    - Get tasks due today
+    - Inputs:
+      - `status` (optional enum): `all`, `uncompleted`, or `completed` (default: `uncompleted`)
+    - Returns: Array of task objects due today
+
+22. `get_tasks_due_tomorrow`
+    - Get tasks due tomorrow
+    - Inputs:
+      - `status` (optional enum): `all`, `uncompleted`, or `completed` (default: `uncompleted`)
+    - Returns: Array of task objects due tomorrow
+
+23. `get_tasks_due_this_week`
+    - Get tasks due this week (Monday-Sunday)
+    - Inputs:
+      - `status` (optional enum): `all`, `uncompleted`, or `completed` (default: `uncompleted`)
+    - Returns: Array of task objects due this week
+
+24. `get_tasks_due_in_days`
+    - Get tasks due within the next N days
+    - Inputs:
+      - `days` (number): Number of days from today (1-365)
+      - `status` (optional enum): `all`, `uncompleted`, or `completed` (default: `uncompleted`)
+    - Returns: Array of task objects due within the specified range
+
+25. `get_overdue_tasks`
+    - Get overdue tasks (due date has passed)
+    - Inputs:
+      - `status` (optional enum): `all`, `uncompleted`, or `completed` (default: `uncompleted`)
+    - Returns: Array of overdue task objects
+
+26. `get_engaged_tasks`
+    - Get "engaged" tasks — high priority OR overdue (GTD-style hot tasks)
+    - Inputs:
+      - `status` (optional enum): `all`, `uncompleted`, or `completed` (default: `uncompleted`)
+    - Returns: Array of high-priority or overdue task objects
+
+27. `get_next_tasks`
+    - Get "next" tasks — medium priority OR due tomorrow (GTD-style upcoming tasks)
+    - Inputs:
+      - `status` (optional enum): `all`, `uncompleted`, or `completed` (default: `uncompleted`)
+    - Returns: Array of medium-priority or due-tomorrow task objects
 
 ## Schema References
 
