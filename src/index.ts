@@ -8,9 +8,12 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 
-// Eliminate $ref references entirely (required by Moonshot/Kimi which rejects non-#/$defs/ refs)
-const toJSON = (schema: z.ZodTypeAny) =>
-  zodToJsonSchema(schema, { $refStrategy: 'none' });
+// Flatten schemas: eliminate $ref (breaks Moonshot/Kimi/VS Copilot) and $schema
+// (unnecessary in MCP, can cause dialect mismatch with strict clients)
+const toJSON = (schema: z.ZodTypeAny) => {
+  const { $schema, ...rest } = zodToJsonSchema(schema, { $refStrategy: 'none' });
+  return rest;
+};
 
 import * as tasks from './operations/tasks.js';
 import * as projects from './operations/projects.js';
