@@ -16,6 +16,7 @@ MCP Server for the TickTick API, enabling task management, project organization,
 - 📅 **Date Queries**: Get tasks due today, tomorrow, this week, or within N days
 - 🎯 **GTD Helpers**: "Engaged" (high priority / overdue) and "Next" (medium / due tomorrow) task views
 - 📦 **Batch Operations**: Create or update multiple tasks in a single request
+- 🤝 **Broad LLM Compatibility**: Flattened JSON Schemas (no `$ref`) for compatibility with Moonshot/Kimi and other strict clients
 
 ## Tools
 

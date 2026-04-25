@@ -8,6 +8,10 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 
+// Eliminate $ref references entirely (required by Moonshot/Kimi which rejects non-#/$defs/ refs)
+const toJSON = (schema: z.ZodTypeAny) =>
+  zodToJsonSchema(schema, { $refStrategy: 'none' });
+
 import * as tasks from './operations/tasks.js';
 import * as projects from './operations/projects.js';
 
@@ -41,146 +45,146 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: 'get_user_projects',
         description: 'Get all user projects',
-        inputSchema: zodToJsonSchema(z.object({})),
+        inputSchema: toJSON(z.object({})),
       },
       {
         name: 'get_project_by_id',
         description: 'Get a project by ID',
-        inputSchema: zodToJsonSchema(projects.ProjectIdOptionsSchema),
+        inputSchema: toJSON(projects.ProjectIdOptionsSchema),
       },
       {
         name: 'get_project_with_data',
         description: 'Get a project with its tasks and columns',
-        inputSchema: zodToJsonSchema(projects.ProjectIdOptionsSchema),
+        inputSchema: toJSON(projects.ProjectIdOptionsSchema),
       },
       {
         name: 'create_project',
         description: 'Create a new project',
-        inputSchema: zodToJsonSchema(projects.CreateProjectOptionsSchema),
+        inputSchema: toJSON(projects.CreateProjectOptionsSchema),
       },
       {
         name: 'update_project',
         description: 'Update an existing project',
-        inputSchema: zodToJsonSchema(projects.UpdateProjectOptionsSchema),
+        inputSchema: toJSON(projects.UpdateProjectOptionsSchema),
       },
       {
         name: 'delete_project',
         description: 'Delete a project',
-        inputSchema: zodToJsonSchema(projects.ProjectIdOptionsSchema),
+        inputSchema: toJSON(projects.ProjectIdOptionsSchema),
       },
       {
         name: 'get_task_by_ids',
         description: 'Get a task by ProjectId and TaskId',
-        inputSchema: zodToJsonSchema(tasks.GetTaskByIdsOptionsSchema),
+        inputSchema: toJSON(tasks.GetTaskByIdsOptionsSchema),
       },
       {
         name: 'create_task',
         description: 'Create a new task',
-        inputSchema: zodToJsonSchema(tasks.CreateTaskOptionsSchema),
+        inputSchema: toJSON(tasks.CreateTaskOptionsSchema),
       },
       {
         name: 'update_task',
         description: 'Update an existing task',
-        inputSchema: zodToJsonSchema(tasks.UpdateTaskOptionsSchema),
+        inputSchema: toJSON(tasks.UpdateTaskOptionsSchema),
       },
       {
         name: 'complete_task',
         description: 'Complete a task',
-        inputSchema: zodToJsonSchema(tasks.TasksIdsOptionsSchema),
+        inputSchema: toJSON(tasks.TasksIdsOptionsSchema),
       },
       {
         name: 'delete_task',
         description: 'Delete a task',
-        inputSchema: zodToJsonSchema(tasks.TasksIdsOptionsSchema),
+        inputSchema: toJSON(tasks.TasksIdsOptionsSchema),
       },
       {
         name: 'get_completed_tasks',
         description:
           'Get completed tasks across all projects within a date range',
-        inputSchema: zodToJsonSchema(tasks.GetCompletedTasksOptionsSchema),
+        inputSchema: toJSON(tasks.GetCompletedTasksOptionsSchema),
       },
       {
         name: 'batch_update_tasks',
         description:
           'Batch create, update, and/or delete multiple tasks in a single request',
-        inputSchema: zodToJsonSchema(
+        inputSchema: toJSON(
           tasks.BatchUpdateTasksOptionsSchema.innerType()
         ),
       },
       {
         name: 'batch_create_tasks',
         description: 'Batch create multiple tasks in a single request',
-        inputSchema: zodToJsonSchema(tasks.BatchCreateTasksOptionsSchema),
+        inputSchema: toJSON(tasks.BatchCreateTasksOptionsSchema),
       },
       {
         name: 'get_subtasks',
         description:
           'Get all subtasks of a parent task by fetching project data and filtering by parentId',
-        inputSchema: zodToJsonSchema(tasks.GetSubtasksOptionsSchema),
+        inputSchema: toJSON(tasks.GetSubtasksOptionsSchema),
       },
       {
         name: 'get_current_user',
         description: 'Get the current authenticated user profile',
-        inputSchema: zodToJsonSchema(z.object({})),
+        inputSchema: toJSON(z.object({})),
       },
       {
         name: 'get_inbox_tasks',
         description:
           'Get tasks from the inbox (resolves inbox project ID automatically from user profile)',
-        inputSchema: zodToJsonSchema(tasks.GetInboxTasksOptionsSchema),
+        inputSchema: toJSON(tasks.GetInboxTasksOptionsSchema),
       },
       {
         name: 'get_all_tasks',
         description:
           'Get all tasks across all projects (optionally filter by status)',
-        inputSchema: zodToJsonSchema(tasks.GetAllTasksOptionsSchema),
+        inputSchema: toJSON(tasks.GetAllTasksOptionsSchema),
       },
       {
         name: 'search_tasks',
         description: 'Search tasks by text in title, content, or description',
-        inputSchema: zodToJsonSchema(tasks.SearchTasksOptionsSchema),
+        inputSchema: toJSON(tasks.SearchTasksOptionsSchema),
       },
       {
         name: 'get_tasks_by_priority',
         description: 'Get tasks filtered by priority level',
-        inputSchema: zodToJsonSchema(tasks.GetTasksByPriorityOptionsSchema),
+        inputSchema: toJSON(tasks.GetTasksByPriorityOptionsSchema),
       },
       {
         name: 'get_tasks_due_today',
         description: 'Get tasks due today',
-        inputSchema: zodToJsonSchema(tasks.GetTasksDueTodayOptionsSchema),
+        inputSchema: toJSON(tasks.GetTasksDueTodayOptionsSchema),
       },
       {
         name: 'get_tasks_due_tomorrow',
         description: 'Get tasks due tomorrow',
-        inputSchema: zodToJsonSchema(tasks.GetTasksDueTomorrowOptionsSchema),
+        inputSchema: toJSON(tasks.GetTasksDueTomorrowOptionsSchema),
       },
       {
         name: 'get_tasks_due_this_week',
         description: 'Get tasks due this week (Monday-Sunday)',
-        inputSchema: zodToJsonSchema(tasks.GetTasksDueThisWeekOptionsSchema),
+        inputSchema: toJSON(tasks.GetTasksDueThisWeekOptionsSchema),
       },
       {
         name: 'get_tasks_due_in_days',
         description: 'Get tasks due within the next N days',
-        inputSchema: zodToJsonSchema(tasks.GetTasksDueInDaysOptionsSchema),
+        inputSchema: toJSON(tasks.GetTasksDueInDaysOptionsSchema),
       },
       {
         name: 'get_overdue_tasks',
         description: 'Get overdue tasks (due date has passed)',
-        inputSchema: zodToJsonSchema(tasks.GetOverdueTasksOptionsSchema),
+        inputSchema: toJSON(tasks.GetOverdueTasksOptionsSchema),
       },
       {
         name: 'get_engaged_tasks',
         description:
           'Get "engaged" tasks: high priority OR overdue (GTD-style hot tasks)',
-        inputSchema: zodToJsonSchema(tasks.GetEngagedTasksOptionsSchema),
+        inputSchema: toJSON(tasks.GetEngagedTasksOptionsSchema),
       },
       {
         name: 'get_next_tasks',
         description:
           'Get "next" tasks: medium priority OR due tomorrow (GTD-style upcoming tasks)',
-        inputSchema: zodToJsonSchema(tasks.GetNextTasksOptionsSchema),
+        inputSchema: toJSON(tasks.GetNextTasksOptionsSchema),
       },
     ],
   };
