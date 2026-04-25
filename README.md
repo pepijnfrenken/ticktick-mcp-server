@@ -2,6 +2,29 @@
 
 [![smithery badge](https://smithery.ai/badge/@alexarevalo9/ticktick-mcp-server)](https://smithery.ai/server/@alexarevalo9/ticktick-mcp-server)
 
+## Changes from upstream
+
+This is a fork of [alexarevalo9/ticktick-mcp-server](https://github.com/alexarevalo9/ticktick-mcp-server) with the following additions and fixes:
+
+### New tools (not in upstream)
+
+- **`get_all_tasks`** -- list tasks across all projects, optionally filtered by status
+- **`search_tasks`** -- full-text search across title, content, and description
+- **`get_tasks_by_priority`** -- filter tasks by priority level (None / Low / Medium / High)
+- **`get_tasks_due_today`** / **`get_tasks_due_tomorrow`** / **`get_tasks_due_this_week`** -- convenience date queries
+- **`get_tasks_due_in_days`** -- arbitrary N-day lookahead
+- **`get_overdue_tasks`** -- tasks past their due date
+- **`get_engaged_tasks`** -- GTD-style "hot" list (high priority OR overdue)
+- **`get_next_tasks`** -- GTD-style "upcoming" list (medium priority OR due tomorrow)
+- **`batch_create_tasks`** -- simpler batch-create wrapper
+
+### Fixes and improvements
+
+- **Schema compatibility** -- tool `inputSchema` is fully inlined (no `$ref`, `$defs`, or `$schema`) so all MCP clients work, including Moonshot/Kimi and VS Copilot
+- **Auth flow** -- `ticktick-auth` no longer requires `CLIENT_ID`/`CLIENT_SECRET` when an existing `ACCESS_TOKEN` is already set
+- **Date field validation** -- accepts both string and numeric timestamp values from the TickTick API
+- **Schema validation** -- robust handling of API response validation for inbox and other endpoints
+
 MCP Server for the TickTick API, enabling task management, project organization, habit tracking, and more.
 
 ### Features
